@@ -107,6 +107,12 @@ function setupIpc() {
     const win = BrowserWindow.getFocusedWindow() || mainWindow;
     win?.close();
   });
+  ipcMain.handle('window:get-bounds', () => {
+    const win = BrowserWindow.getFocusedWindow() || mainWindow;
+    if (!win) return null;
+    const b = win.getBounds();
+    return { x: b.x, y: b.y, width: b.width, height: b.height };
+  });
 }
 
 app.whenReady().then(() => {

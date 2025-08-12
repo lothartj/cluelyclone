@@ -26,7 +26,6 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_OPEN_ROUTER_API_URL': JSON.stringify(VITE_OPEN_ROUTER_API_URL)
     },
     server: {
-      // CLI may override this with --port
       port: 5173,
       strictPort: false
     },

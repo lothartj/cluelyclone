@@ -4,7 +4,7 @@
   --stroke: rgba(255, 255, 255, 0.08);
   --text: rgba(244, 246, 248, 0.96);
   --muted: rgba(228, 231, 236, 0.6);
-  --brand: #0A84FF; /* iOS blue */
+  --brand: #0A84FF;
   --red: #FF605C;
   --yellow: #FFBD44;
   --green: #00CA4E;
@@ -87,10 +87,10 @@ body {
 
 .content { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
-/* Main content area */
+
 .main { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 
-/* Chat view */
+
 .chat { flex: 1; overflow: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 10px; }
 .chat::-webkit-scrollbar { width: 0; height: 0; }
 .chat { scrollbar-width: none; -ms-overflow-style: none; }
@@ -100,7 +100,7 @@ body {
 .message.user { margin-left: auto; background: var(--brand); color: #0b1220; border-color: rgba(10,132,255,0.7); }
 .message.assistant { margin-right: auto; background: rgba(255,255,255,0.06); color: var(--text); }
 
-/* Insights and transcript retain scroll but hide bars */
+
 .insights { display: grid; gap: 10px; max-height: 40vh; overflow: auto; padding-right: 4px; }
 .insights::-webkit-scrollbar { width: 0; height: 0; }
 .insights { scrollbar-width: none; -ms-overflow-style: none; }
@@ -118,4 +118,33 @@ body {
 
 .footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .muted { color: var(--muted); font-size: 12px; }
-.kbd { font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--stroke); background: rgba(255,255,255,0.06); color: var(--text); } 
+.kbd { font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--stroke); background: rgba(255,255,255,0.06); color: var(--text); }
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  margin: 12px;
+  border-radius: 12px;
+  cursor: crosshair;
+  background: rgba(0,0,0,0.10);
+  outline: 2px dashed rgba(255,255,255,0.12);
+  display: block;
+}
+.selection-rect {
+  position: absolute;
+  border: 1px solid rgba(10,132,255,0.9);
+  box-shadow: inset 0 0 0 1px rgba(10,132,255,0.5), 0 0 0 9999px rgba(10,132,255,0.12);
+  background: rgba(10,132,255,0.15);
+  border-radius: 6px;
+}
+.selection-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+} 
