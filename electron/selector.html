@@ -49,6 +49,7 @@
       async function confirm() {
         try {
           if (!rect || rect.w < 3 || rect.h < 3) return;
+          await cluely.selector.prepareCapture();
           const shot = await cluely.capture.screenshotFull();
           if (!shot || shot.error) throw new Error(shot && shot.error || 'Capture failed');
           const img = new Image();

@@ -90,11 +90,13 @@ function openSelectorWindow() {
     return;
   }
   const primaryDisplay = screen.getPrimaryDisplay();
+  try { mainWindow?.hide(); } catch {}
   selectorWindow = new BrowserWindow({
     x: primaryDisplay.bounds.x,
     y: primaryDisplay.bounds.y,
     width: primaryDisplay.bounds.width,
     height: primaryDisplay.bounds.height,
+    show: false,
     frame: false,
     transparent: true,
     resizable: false,
@@ -116,9 +118,14 @@ function openSelectorWindow() {
 
   const selectorPath = url.pathToFileURL(path.join(process.cwd(), 'electron', 'selector.html')).toString();
   selectorWindow.loadURL(selectorPath);
+  try { selectorWindow.setAlwaysOnTop(true, 'screen-saver'); selectorWindow.focus(); } catch {}
+  selectorWindow.once('ready-to-show', () => {
+    try { selectorWindow.show(); } catch {}
+  });
 
   selectorWindow.on('closed', () => {
     selectorWindow = null;
+    try { mainWindow?.showInactive(); } catch {}
   });
 }
 
@@ -155,17 +162,23 @@ function setupIpc() {
   ipcMain.handle('selector:open', () => {
     openSelectorWindow();
   });
+  ipcMain.handle('selector:prepare-capture', async () => {
+    try { selectorWindow?.hide(); } catch {}
+    return true;
+  });
   ipcMain.handle('selector:cancel', () => {
     if (selectorWindow) {
       selectorWindow.close();
       selectorWindow = null;
     }
+    try { mainWindow?.showInactive(); } catch {}
   });
   ipcMain.handle('selector:complete', (_e, payload) => {
     if (selectorWindow) {
       selectorWindow.close();
       selectorWindow = null;
     }
+    try { mainWindow?.showInactive(); } catch {}
     if (mainWindow && payload && payload.imageDataUrl) {
       mainWindow.webContents.send('visual-ask', { imageDataUrl: payload.imageDataUrl });
     }

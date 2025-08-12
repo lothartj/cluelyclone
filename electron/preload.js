@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('cluely', {
   },
   selector: {
     open: () => ipcRenderer.invoke('selector:open'),
+    prepareCapture: () => ipcRenderer.invoke('selector:prepare-capture'),
     cancel: () => ipcRenderer.invoke('selector:cancel'),
     complete: (payload) => ipcRenderer.invoke('selector:complete', payload),
     onVisualAsk: (callback) => {
