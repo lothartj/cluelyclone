@@ -18,7 +18,6 @@ contextBridge.exposeInMainWorld('cluely', {
           height: primary.size.height,
           scaleFactor: primary.scaleFactor || 1
         } : { width: 1920, height: 1080, scaleFactor: 1 };
-
         const sources = await desktopCapturer.getSources({
           types: ['screen'],
           thumbnailSize: { width: Math.floor(width * scaleFactor), height: Math.floor(height * scaleFactor) }
@@ -31,6 +30,16 @@ contextBridge.exposeInMainWorld('cluely', {
       } catch (e) {
         return { error: e.message || 'Failed to capture screen' };
       }
+    }
+  },
+  selector: {
+    open: () => ipcRenderer.invoke('selector:open'),
+    cancel: () => ipcRenderer.invoke('selector:cancel'),
+    complete: (payload) => ipcRenderer.invoke('selector:complete', payload),
+    onVisualAsk: (callback) => {
+      const listener = (_e, data) => callback?.(data);
+      ipcRenderer.on('visual-ask', listener);
+      return () => ipcRenderer.removeListener('visual-ask', listener);
     }
   }
 }); 

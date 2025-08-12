@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; img-src 'self' data: blob:;" />
+    <title>Selector</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+      body { background: rgba(0,0,0,0.18); cursor: crosshair; }
+      .rect { position: absolute; border: 2px solid #0A84FF; background: rgba(10,132,255,0.2); border-radius: 6px; box-shadow: 0 0 0 99999px rgba(0,0,0,0.35) inset; }
+      .hint { position: fixed; left: 16px; bottom: 16px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 6px 8px; border-radius: 8px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="rect" class="rect" style="display:none"></div>
+    <div class="hint">Drag to select. Enter to confirm. Esc to cancel.</div>
+    <script>
+      const { cluely } = window;
+      let start = null;
+      let rect = null;
+      const el = document.getElementById('rect');
+
+      function setRect(r){
+        rect = r;
+        if (!r) { el.style.display='none'; return; }
+        el.style.display = 'block';
+        el.style.left = r.x + 'px';
+        el.style.top = r.y + 'px';
+        el.style.width = r.w + 'px';
+        el.style.height = r.h + 'px';
+      }
+
+      window.addEventListener('mousedown', (e) => {
+        start = { x: e.clientX, y: e.clientY };
+        setRect({ x: start.x, y: start.y, w: 0, h: 0 });
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!start) return;
+        const x = Math.min(e.clientX, start.x);
+        const y = Math.min(e.clientY, start.y);
+        const w = Math.abs(e.clientX - start.x);
+        const h = Math.abs(e.clientY - start.y);
+        setRect({ x, y, w, h });
+      });
+      window.addEventListener('mouseup', () => {
+        // keep current rect; wait for Enter
+      });
+
+      async function confirm() {
+        try {
+          if (!rect || rect.w < 3 || rect.h < 3) return;
+          const shot = await cluely.capture.screenshotFull();
+          if (!shot || shot.error) throw new Error(shot && shot.error || 'Capture failed');
+          const img = new Image();
+          await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = shot.dataUrl; });
+
+          const scale = shot.scaleFactor || window.devicePixelRatio || 1;
+          const cropX = Math.floor(rect.x * scale);
+          const cropY = Math.floor(rect.y * scale);
+          const cropW = Math.floor(rect.w * scale);
+          const cropH = Math.floor(rect.h * scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.min(cropW, img.naturalWidth - cropX));
+          canvas.height = Math.max(1, Math.min(cropH, img.naturalHeight - cropY));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, cropX, cropY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+          const regionDataUrl = canvas.toDataURL('image/png');
+
+          await cluely.selector.complete({ imageDataUrl: regionDataUrl });
+        } catch (e) {
+          await cluely.selector.cancel();
+        }
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cluely.selector.cancel();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          confirm();
+        }
+      });
+    </script>
+  </body>
+</html> 

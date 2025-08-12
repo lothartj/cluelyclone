@@ -4,6 +4,7 @@ import url from 'node:url';
 
 let mainWindow = null;
 let tray = null;
+let selectorWindow = null;
 
 function isDev() {
   return !!process.env.VITE_DEV_SERVER_URL;
@@ -83,6 +84,44 @@ function toggleWindow() {
   }
 }
 
+function openSelectorWindow() {
+  if (selectorWindow) {
+    try { selectorWindow.focus(); } catch {}
+    return;
+  }
+  const primaryDisplay = screen.getPrimaryDisplay();
+  selectorWindow = new BrowserWindow({
+    x: primaryDisplay.bounds.x,
+    y: primaryDisplay.bounds.y,
+    width: primaryDisplay.bounds.width,
+    height: primaryDisplay.bounds.height,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    skipTaskbar: true,
+    focusable: true,
+    alwaysOnTop: true,
+    fullscreen: false,
+    backgroundColor: '#00000001',
+    webPreferences: {
+      preload: path.join(process.cwd(), 'electron', 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      devTools: true
+    }
+  });
+
+  const selectorPath = url.pathToFileURL(path.join(process.cwd(), 'electron', 'selector.html')).toString();
+  selectorWindow.loadURL(selectorPath);
+
+  selectorWindow.on('closed', () => {
+    selectorWindow = null;
+  });
+}
+
 function setupIpc() {
   ipcMain.handle('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow() || mainWindow;
@@ -112,6 +151,24 @@ function setupIpc() {
     if (!win) return null;
     const b = win.getBounds();
     return { x: b.x, y: b.y, width: b.width, height: b.height };
+  });
+  ipcMain.handle('selector:open', () => {
+    openSelectorWindow();
+  });
+  ipcMain.handle('selector:cancel', () => {
+    if (selectorWindow) {
+      selectorWindow.close();
+      selectorWindow = null;
+    }
+  });
+  ipcMain.handle('selector:complete', (_e, payload) => {
+    if (selectorWindow) {
+      selectorWindow.close();
+      selectorWindow = null;
+    }
+    if (mainWindow && payload && payload.imageDataUrl) {
+      mainWindow.webContents.send('visual-ask', { imageDataUrl: payload.imageDataUrl });
+    }
   });
 }
 

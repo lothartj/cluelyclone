@@ -230,10 +230,33 @@ export default function App() {
   }
 
   function startVisualAsk() {
-    setSelecting(true);
-    setActiveTab('chat');
     setError('');
+    try { window.cluely?.selector?.open?.(); } catch {}
   }
+
+  useEffect(() => {
+    const off = window.cluely?.selector?.onVisualAsk?.(async ({ imageDataUrl }) => {
+      if (!imageDataUrl) return;
+      const apiKey = import.meta.env.VITE_OPEN_ROUTER_API_KEY || '';
+      if (!apiKey) { setError('Missing OpenRouter API key'); return; }
+      const userPrompt = (query || 'Explain what you see in this region.').trim();
+      setMessages(prev => [...prev, { role: 'user', content: `${userPrompt} [image attached]` }]);
+      setQuery('');
+      setLoading(true);
+      try {
+        const content = await askOpenRouterWithImage({ apiKey, prompt: userPrompt, imageDataUrl });
+        const now = new Date().toLocaleTimeString();
+        setInsights(prev => [{ id: Date.now(), title: `Visual AI (${now})`, detail: content }, ...prev]);
+        setMessages(prev => [...prev, { role: 'assistant', content }]);
+        if (listening) speak(content);
+      } catch (e) {
+        setError(e.message || 'Visual ask failed');
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => { if (typeof off === 'function') off(); };
+  }, [query, listening]);
 
   useEffect(() => {
     function onKey(e) {
@@ -330,22 +353,7 @@ export default function App() {
       </div>
 
       {selecting && (
-        <div
-          ref={overlayRef}
-          className="selection-overlay no-drag"
-          onMouseDown={onOverlayMouseDown}
-          onMouseMove={onOverlayMouseMove}
-          onMouseUp={() => { if (selectionRect && selectionRect.w > 2 && selectionRect.h > 2) { /* keep selection */ } else { cancelSelection(); } }}
-          onDoubleClick={() => { if (selectionRect) finishSelectionAndAsk(query); }}
-        >
-          {selectionRect && (
-            <div
-              className="selection-rect"
-              style={{ left: selectionRect.x, top: selectionRect.y, width: selectionRect.w, height: selectionRect.h }}
-            />
-          )}
-          <div className="selection-hint">Drag to select. Double-click to ask. Esc to cancel.</div>
-        </div>
+        null
       )}
     </div>
   );
